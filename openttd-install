@@ -1,0 +1,54 @@
+#!/bin/bash
+
+set -e
+
+OPENTTD_BASE_URL="https://cdn.openttd.org/openttd-releases"
+OPENGFX_BASE_URL="https://cdn.openttd.org/opengfx-releases"
+if [[ -z $OPENTTD_VERSION ]];then
+  export OPENTTD_VERSION=$(curl -L ${OPENTTD_BASE_URL}/latest.yaml 2>/dev/null | yq ea '.latest[0].version' -)
+fi
+
+if [[ -z $OPENGFX_VERSION ]];then
+  export OPENGFX_VERSION=$(curl -L ${OPENGFX_BASE_URL}/latest.yaml 2>/dev/null | yq ea '.latest[0].version' -)
+fi
+
+if [[ -f $HOME/.games/openttd/.version ]];then
+  OPENTTD_INSTALLED_VERSION=$(cat $HOME/.games/openttd/.version)
+fi
+
+if [[ -f $HOME/.games/openttd-opengfx/.version ]];then
+  OPENGFX_INSTALLED_VERSION=$(cat $HOME/.games/openttd-opengfx/.version)
+fi
+
+if [[ "${OPENTTD_INSTALLED_VERSION}" != "${OPENTTD_VERSION}" ]];then
+  echo "Installed version of openttd ${OPENTTD_INSTALLED_VERSION} is NOT up to date with ${OPENTTD_VERSION}. Installing new version"
+  rm -rf $HOME/.games/openttd
+  mkdir -p $HOME/.games/openttd
+  OPENTTD_VERSION_URL="${OPENTTD_BASE_URL}/${OPENTTD_VERSION}"
+  OPENTTD_INSTALL_ARCHIVE=$(curl -L ${OPENTTD_VERSION_URL}/manifest.yaml | yq ea '.files[].id' - | grep linux-generic-amd64)
+  curl -L -o "/tmp/${OPENTTD_INSTALL_ARCHIVE}" "${OPENTTD_VERSION_URL}/${OPENTTD_INSTALL_ARCHIVE}"
+  
+  # set a version marker
+  tar -x -v --strip-components=1 -C $HOME/.games/openttd -f /tmp/${OPENTTD_INSTALL_ARCHIVE}
+  echo "${OPENTTD_VERSION}" > $HOME/.games/openttd/.version
+  rm /tmp/${OPENTTD_INSTALL_ARCHIVE}
+else
+  echo "Installed version of openttd ${OPENTTD_INSTALLED_VERSION} is up to date with ${OPENTTD_VERSION}"
+fi
+
+if [[ "${OPENGFX_INSTALLED_VERSION}" != "${OPENGFX_VERSION}" ]];then
+  echo "Installed version of opengfx ${OPENGFX_INSTALLED_VERSION} is NOT up to date with ${OPENGFX_VERSION}. Installing new version"
+  rm -rf $HOME/.games/openttd-opengfx
+  mkdir -p $HOME/.games/openttd-opengfx
+  OPENGFX_VERSION_URL="${OPENGFX_BASE_URL}/${OPENGFX_VERSION}"
+  OPENGFX_INSTALL_ARCHIVE=$(curl -L ${OPENGFX_VERSION_URL}/manifest.yaml | yq ea '.files[].id' - | grep "\-all")
+  curl -L -o "/tmp/${OPENGFX_INSTALL_ARCHIVE}" "${OPENGFX_VERSION_URL}/${OPENGFX_INSTALL_ARCHIVE}"
+  # set a version marker
+  unzip -p /tmp/${OPENGFX_INSTALL_ARCHIVE} "opengfx*.tar" | tar -x -v --strip-components=1 -C $HOME/.games/openttd-opengfx
+  echo "${OPENGFX_VERSION}" > $HOME/.games/openttd-opengfx/.version
+  rm /tmp/${OPENGFX_INSTALL_ARCHIVE}
+  mkdir -p $HOME/.local/share/openttd/baseset/
+  ln -sf $HOME/.games/openttd-opengfx/ $HOME/.local/share/openttd/baseset/
+else
+  echo "Installed version of opengfx ${OPENGFX_INSTALLED_VERSION} is up to date with ${OPENGFX_VERSION}"
+fi
