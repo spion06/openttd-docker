@@ -25,4 +25,10 @@ else
   echo "No savefile found generating new world on startup"
 fi
 
+if [[ -n "${OPENTTD_CONFIG}" ]];then
+  OPENTTD_ARGS+=("-c" "$OPENTTD_CONFIG")
+else
+  echo "No config file found. Using default"
+fi
+
 exec $HOME/.games/openttd/openttd "${OPENTTD_ARGS[@]}"
