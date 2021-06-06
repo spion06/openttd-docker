@@ -5,6 +5,7 @@ openttd-install
 SAVE_DIR="${HOME}/.local/share/openttd/save"
 AUTOSAVE_DIR="${SAVE_DIR}/autosave"
 OPENTTD_ARGS=("-D")
+SAVEFILE=""
 
 if [[ -n ${SAVE_NAME} ]];then
   # get latest save file by timestamp written
